@@ -18,6 +18,7 @@ import os
 import csv
 import ConfigParser
 import math
+from bos import BosFile
 
 
 def f(dt):
@@ -171,6 +172,21 @@ def write_output(output_filename, ht):
                 'downpour[mm]', 'evaporation[mm]', 'r[m]'])
         for k, v in data_sorted:
             writer.writerow(v)
+
+
+def write_bos_output(output_filename, ht, column='ht'):
+    """
+    Use BosFile to write output in BOS format
+
+    Choose column from 'ht', 'd_harm', 'c_harm', 'downpour', 'evaporation', 'r'
+    """
+    print 'writing BOS file %s...' % output_filename
+    with BosFile(options.output_filename) as bos_file:
+        for k, v in ht.items():
+            date_str = k
+            time_str = '000000'
+            value = v[column]
+            bos_file.add_row(date_str, time_str, value)
     
 
 if __name__ == '__main__':
@@ -178,19 +194,24 @@ if __name__ == '__main__':
     parser = OptionParser()
     parser.add_option(
         '-i', '--inputdir', dest='input_dir',
-        help='Input dir, default=meteo', default='meteo')
+        help='Input dir, default=DATA/METEO', 
+        default=os.path.join('DATA', 'METEO'))
     parser.add_option(
         '-g', '--groundwaterlevel', dest='groundwaterlevel',
         help='Start grondwaterlevel, default=0.0 or value in outputfile', 
         default=0.0)
     parser.add_option(
         '-o', '--outputfile', dest='output_filename',
-        help='Output file, default=groundwater.csv',
-        default='grondwater.csv')
+        help='Output file, default=DATABASE/SDB/DS_RD_GW_HT.bin GrondWater HoogTe',
+        default=os.path.join('DATABASE', 'SDB', 'DS_RD_GW_HT.bin'))
+    parser.add_option(
+        '-t', '--outputtype', dest='output_type',
+        help='Output type, default=bin (BOS format), optional is csv',
+        default='bin')
     parser.add_option(
         '-s', '--startdate', dest='start_date',
-        help='Start date yyyymmdd, default=yesterday', 
-        default=f(datetime.datetime.now()-datetime.timedelta(days=1)))
+        help='Start date yyyymmdd, default=3 months ago', 
+        default=f(datetime.datetime.now()-datetime.timedelta(days=90)))
     parser.add_option(
         '-e', '--enddate', dest='end_date',
         help='End date yyyymmdd, default=now', 
@@ -200,6 +221,7 @@ if __name__ == '__main__':
     print 'Initial ground waterlevel %f' % options.groundwaterlevel
     print 'Input dir: %s' % options.input_dir
     print 'Output filename: %s' % options.output_filename
+    print 'Output type: %s' % options.output_type
     print 'Start date: %s' % options.start_date
     print 'End date: %s' % options.end_date
 
@@ -238,4 +260,8 @@ if __name__ == '__main__':
 
         current_dt += datetime.timedelta(days=1)
 
-    write_output(options.output_filename, ht)
+    if options.output_type == 'csv':
+        write_output(options.output_filename, ht)
+    else:
+        write_bos_output(options.output_filename, ht, column='ht')
+
