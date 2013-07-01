@@ -18,7 +18,27 @@ import os
 import csv
 import ConfigParser
 import math
-from bos import BosFile
+import logging
+import bos
+
+
+BOS_MODULE_NAME = 'M03S40'
+
+
+logger = logging.getLogger(__name__)
+
+# File handler
+hdlr = logging.FileHandler(os.path.join('LOGS', 'M03S40.log'))
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+hdlr.setFormatter(formatter)
+logger.addHandler(hdlr) 
+
+# Console handler
+console = logging.StreamHandler()
+console.setFormatter(formatter)
+logger.addHandler(console)
+
+logger.setLevel(logging.DEBUG)
 
 
 def f(dt):
@@ -32,7 +52,7 @@ def find_csv(dt, input_dir=''):
     try:
         return glob.glob(find_path)[0]
     except:
-        print 'File not found: %s' % find_path
+        logger.warning('File not found: %s' % find_path)
         return None
 
 
@@ -148,7 +168,7 @@ def write_output(output_filename, ht):
     """
     data = {}
     if os.path.exists(output_filename):
-        print 'Updating existing file...'
+        logger.info('Updating existing file...')
         with open(output_filename, 'r') as csv_file:
             reader = csv.reader(csv_file, delimiter=',', quotechar='"')
             for i, row in enumerate(reader):
@@ -163,7 +183,7 @@ def write_output(output_filename, ht):
     data_sorted = data.items()
     data_sorted.sort()
 
-    print 'writing %s...' % output_filename
+    logger.info('writing %s...' % output_filename)
     with open(output_filename, 'wb') as csv_file:
         writer = csv.writer(csv_file, delimiter=',', quotechar='"',
                             quoting=csv.QUOTE_MINIMAL)
@@ -180,8 +200,8 @@ def write_bos_output(output_filename, ht, column='ht'):
 
     Choose column from 'ht', 'd_harm', 'c_harm', 'downpour', 'evaporation', 'r'
     """
-    print 'writing BOS file %s...' % output_filename
-    with BosFile(options.output_filename) as bos_file:
+    logger.info('writing BOS file %s...' % output_filename)
+    with bos.BosFile(options.output_filename) as bos_file:
         for k, v in ht.items():
             date_str = k
             time_str = '000000'
@@ -190,7 +210,7 @@ def write_bos_output(output_filename, ht, column='ht'):
     
 
 if __name__ == '__main__':
-    print 'Grondwatermodule.'
+    logger.info('M03S40. Grondwatermodule.')
     parser = OptionParser()
     parser.add_option(
         '-i', '--inputdir', dest='input_dir',
@@ -218,12 +238,15 @@ if __name__ == '__main__':
         default=f(datetime.datetime.now()))
     (options, args) = parser.parse_args()
     # print options, args
-    print 'Initial ground waterlevel %f' % options.groundwaterlevel
-    print 'Input dir: %s' % options.input_dir
-    print 'Output filename: %s' % options.output_filename
-    print 'Output type: %s' % options.output_type
-    print 'Start date: %s' % options.start_date
-    print 'End date: %s' % options.end_date
+    logger.info('Initial ground waterlevel %f' % options.groundwaterlevel)
+    logger.info('Input dir: %s' % options.input_dir)
+    logger.info('Output filename: %s' % options.output_filename)
+    logger.info('Output type: %s' % options.output_type)
+    logger.info('Start date: %s' % options.start_date)
+    logger.info('End date: %s' % options.end_date)
+
+    # Make sure the dirigent sees that the module is running
+    bos.make_runfile(BOS_MODULE_NAME)
 
     start_date = datetime.datetime.strptime(options.start_date, '%Y%m%d')
     end_date = datetime.datetime.strptime(options.end_date, '%Y%m%d')
@@ -239,7 +262,7 @@ if __name__ == '__main__':
             meteo_file = MeteoFile(meteo_filename)
             calc_values = meteo_file.get(current_dt)
         if calc_values is None:
-            print 'skipped %r' % current_dt
+            logger.warning('skipped %r' % current_dt)
             calc_values = {'downpour': 0.0, 'evaporation': 0.0}
 
         # testing
@@ -256,7 +279,7 @@ if __name__ == '__main__':
             prev_d_harm=calc_values2['d_harm'],
             **calc_values)
         ht[f(current_dt)] = current_ht
-        print '%s %r' % (f(current_dt), current_ht)
+        logger.debug('data row: %s %r' % (f(current_dt), current_ht))
 
         current_dt += datetime.timedelta(days=1)
 
@@ -265,3 +288,4 @@ if __name__ == '__main__':
     else:
         write_bos_output(options.output_filename, ht, column='ht')
 
+    bos.remove_runfile(BOS_MODULE_NAME)

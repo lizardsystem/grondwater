@@ -11,6 +11,15 @@ def xor_c(a):
     return bytearray([b^ord(ENCODING_STRING[i % LEN_ENC_STR]) for i, b in enumerate(bytearray(a))])
 
 
+def make_runfile(module_name):
+    with open('%s.run' % module_name, 'w') as f:
+        f.write('some dummy content')
+
+
+def remove_runfile(module_name):
+    os.remove('%s.run' % module_name)
+
+
 class BosFile(object):
     """BOS format file writer. 
 
