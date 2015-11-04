@@ -16,11 +16,11 @@ Integratie in BOS
 (doet systeembeheerder)
 Alle stappen controleren of ze werken, dan de volgende stap uitvoeren.
 
-Draai M03S40 om te testen.
-Inputdirectory is DATA\METEO\ en de files moeten er zoals deze uitzien: 20130424-20000-METEO_TL.CSV
-Outputdirectory is DATABASE\SDB\DS_RD_GW_HT.bin
-In grondwater.cfg is de config te vinden.
-De uitvoer is ook in LOGS\M03S40.log te vinden.
+- Draai M03S40 om te testen.
+- Inputdirectory is DATA\METEO\ en de files moeten er zoals deze uitzien: 20130424-20000-METEO_TL.CSV
+- Outputdirectory is DATABASE\SDB\DS_RD_GW_HT.bin
+- In grondwater.cfg is de config te vinden.
+- De uitvoer is ook in LOGS\M03S40.log te vinden.
 
 De uitvoer moet er ongeveer zo uitzien:
 
